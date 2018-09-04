@@ -1062,9 +1062,11 @@ class Revision(Change):
     """A Change consisting of a single git commit."""
 
     CC_RE = re.compile(r'^\s*C[Cc]:\s*(?P<to>[^#]+@[^\s#]*)\s*(#.*)?$')
+    AUTHOR_RE = re.compile(r'^(?P<name>.+?) <(?P<email>.+?)>$')
 
     def __init__(self, reference_change, rev, num, tot):
         Change.__init__(self, reference_change.environment)
+        self.__author_email = None
         self.reference_change = reference_change
         self.rev = rev
         self.change_type = self.reference_change.change_type
@@ -1125,6 +1127,15 @@ class Revision(Change):
             values['reply_to'] = reply_to
 
         return values
+
+    def get_author_email(self):
+        if self.__author_email is None:
+            m = self.AUTHOR_RE.match(self.author)
+            if m:
+                self.__author_email = m.group('email')
+            else:
+                self.__author_email = 'missing email'
+        return self.__author_email
 
     def generate_email_header(self, **extra_values):
         for line in self.expand_header_lines(
